@@ -1,7 +1,10 @@
+// Update app.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const bookRoutes = require('./routes/bookRoutes'); // Tambahkan ini
 
 const app = express();
 
@@ -12,12 +15,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
-// Di file app.js
-const adminRoutes = require('./routes/adminRoutes');
-
-// Setelah deklarasi authRoutes
 app.use('/api/admin', adminRoutes);
-
+app.use('/api/admin/books', bookRoutes); // Tambahkan ini
 
 // Health check
 app.get('/', (req, res) => {
