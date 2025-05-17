@@ -1,38 +1,42 @@
 # perpustakaan-backend
 
-# REST API Perpustakaan - Login & Authentication
+# REST API Perpustakaan - Admin Dashboard
 
-Repositori ini berisi backend REST API sederhana untuk sistem login dan autentikasi pengguna pada aplikasi perpustakaan.
+Repositori ini berisi backend REST API untuk sistem dashboard admin pada aplikasi perpustakaan.
 
 ## Fitur Utama
 
-- **Registrasi & Login**: Autentikasi menggunakan JWT.
-- **Manajemen User**: Mendukung peran (role) `admin`, `petugas`, dan `anggota`.
-- **Proteksi Endpoint**: Middleware untuk validasi token JWT.
-- **Koneksi Database**: Menggunakan MySQL.
+- **Login & Autentikasi**: Menggunakan JWT.
+- **Manajemen User**: Mendukung role `admin`, `petugas`, dan `anggota`.
+- **Manajemen Buku, Anggota, dan Peminjaman**: CRUD data perpustakaan.
+- **Proteksi Endpoint**: Middleware validasi token JWT & role admin.
+- **Koneksi Database**: MySQL.
 
 ## Struktur Folder
 
 ```
-api-login/
-├── .env                # Konfigurasi environment (DB, JWT)
-├── package.json        # Konfigurasi npm & dependencies
-├── perpustakaan.sql    # Skrip SQL untuk tabel user
+perpustakaan-backend/
+├── .env                  # Konfigurasi environment (DB, JWT)
+├── package.json          # Konfigurasi npm & dependencies
+├── perpustakaan.sql      # Skrip SQL seluruh tabel
 └── src/
-    ├── app.js                  # Entry point aplikasi
+    ├── app.js                    # Entry point aplikasi
     ├── config/
-    │   ├── database.js         # Koneksi database MySQL
-    │   └── jwt.js              # Konfigurasi JWT
+    │   ├── database.js           # Koneksi database MySQL
+    │   └── jwt.js                # Konfigurasi JWT
     ├── controllers/
-    │   └── authController.js   # Logika login & registrasi
+    │   ├── adminController.js    # Logika dashboard admin
+    │   └── authController.js     # Logika login & registrasi
     ├── middlewares/
-    │   └── authMiddleware.js   # Middleware autentikasi JWT
+    │   └── authMiddleware.js     # Middleware autentikasi & otorisasi
     ├── models/
-    │   └── userModel.js        # Model user (query ke DB)
+    │   └── userModel.js          # Model user (query ke DB)
     ├── routes/
-    │   └── authRoutes.js       # Routing autentikasi
+    │   ├── adminRoutes.js        # Routing dashboard admin
+    │   └── authRoutes.js         # Routing autentikasi
     └── utils/
-        └── response.js         # Helper response API
+        ├── ahpCalculator.js      # Utility AHP (jika ada)
+        └── response.js           # Helper response API
 ```
 
 ## Instalasi
@@ -57,16 +61,42 @@ atau
 npm start
 ```
 
+## Contoh Cek GET Dashboard Admin dengan JWT
+
+1. **Login** untuk mendapatkan token JWT:
+   ```
+   POST /api/auth/login
+   ```
+   Body:
+   ```json
+   {
+     "email": "admin@perpustakaan.com",
+     "password": "admin123"
+   }
+   ```
+   Simpan token JWT dari response.
+
+2. **Akses endpoint dashboard admin** (misal: `/api/admin/dashboard`) dengan header Authorization:
+   ```sh
+   curl -H "Authorization: Bearer <TOKEN_JWT_ANDA>" http://localhost:3000/api/admin/dashboard
+   ```
+   Ganti `<TOKEN_JWT_ANDA>` dengan token JWT yang didapat saat login.
+
 ## Endpoint Utama
 
 - `POST /api/auth/login` — Login user & mendapatkan JWT
-- Endpoint lain dapat ditambahkan sesuai kebutuhan
+- `GET /api/admin/dashboard` — Data dashboard admin (hanya untuk role admin)
+- Endpoint lain: CRUD buku, anggota, peminjaman, dsb.
 
 ## Catatan
 
 - Password user di-hash menggunakan bcryptjs.
-- Token JWT digunakan untuk autentikasi dan harus dikirim pada header `Authorization` untuk mengakses endpoint yang diproteksi.
-- Role user (`admin`, `petugas`, `anggota`) dapat digunakan untuk membatasi akses fitur tertentu.
+- Token JWT wajib dikirim pada header `Authorization` untuk endpoint yang diproteksi.
+- Role user (`admin`, `petugas`, `anggota`) membatasi akses fitur tertentu.
 
 ---
 
+Dibuat untuk kebutuhan dashboard admin perpustakaan.
+
+
+Dibuat dengan ❤️ untuk proyek perpustakaan | [@pembuat](https://github.com/TheLastGigolo)
