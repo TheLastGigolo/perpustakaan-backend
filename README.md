@@ -16,27 +16,34 @@ Repositori ini berisi backend REST API untuk sistem dashboard admin pada aplikas
 
 ```
 perpustakaan-backend/
-├── .env                  # Konfigurasi environment (DB, JWT)
-├── package.json          # Konfigurasi npm & dependencies
-├── perpustakaan.sql      # Skrip SQL seluruh tabel
-└── src/
-    ├── app.js                    # Entry point aplikasi
-    ├── config/
-    │   ├── database.js           # Koneksi database MySQL
-    │   └── jwt.js                # Konfigurasi JWT
-    ├── controllers/
-    │   ├── adminController.js    # Logika dashboard admin
-    │   └── authController.js     # Logika login & registrasi
-    ├── middlewares/
-    │   └── authMiddleware.js     # Middleware autentikasi & otorisasi
-    ├── models/
-    │   └── userModel.js          # Model user (query ke DB)
-    ├── routes/
-    │   ├── adminRoutes.js        # Routing dashboard admin
-    │   └── authRoutes.js         # Routing autentikasi
-    └── utils/
-        ├── ahpCalculator.js      # Utility AHP (jika ada)
-        └── response.js           # Helper response API
+├── .env                      # Konfigurasi environment (DB, JWT)
+├── .eslintrc.json            # Konfigurasi ESLint
+├── .gitignore                # File/folder yang diabaikan git
+├── package.json              # Konfigurasi npm & dependencies
+├── perpustakaan.sql          # Skrip SQL seluruh tabel & data awal
+├── README.md                 # Dokumentasi backend (file ini)
+├── src/
+│   ├── app.js                # Entry point aplikasi Express
+│   ├── config/
+│   │   ├── database.js       # Koneksi database MySQL
+│   │   └── jwt.js            # Konfigurasi JWT
+│   ├── controllers/
+│   │   ├── adminController.js# Logika dashboard admin
+│   │   ├── authController.js # Logika login & registrasi
+│   │   └── bookController.js # Logika CRUD buku
+│   ├── middlewares/
+│   │   └── authMiddleware.js # Middleware autentikasi & otorisasi
+│   ├── models/
+│   │   ├── bookModel.js      # Model/query buku ke DB
+│   │   └── userModel.js      # Model/query user ke DB
+│   ├── routes/
+│   │   ├── adminRoutes.js    # Routing dashboard admin
+│   │   ├── authRoutes.js     # Routing autentikasi
+│   │   └── bookRoutes.js     # Routing buku
+│   └── utils/
+│       ├── ahpCalculator.js  # Utility AHP (jika ada)
+│       └── response.js       # Helper response API
+├── uploads/                  # Folder upload file (misal: cover buku)
 ```
 
 ## Instalasi
@@ -87,6 +94,69 @@ npm start
 - `POST /api/auth/login` — Login user & mendapatkan JWT
 - `GET /api/admin/dashboard` — Data dashboard admin (hanya untuk role admin)
 - Endpoint lain: CRUD buku, anggota, peminjaman, dsb.
+
+## Daftar Endpoint API (Khusus Halaman Admin)
+
+> **Catatan:**  
+> Semua endpoint pada backend ini **hanya untuk kebutuhan dashboard/admin**. Penggunaan API di luar role admin/petugas tidak didukung.
+
+### Autentikasi
+- **POST `/api/auth/login`**  
+  Login user & mendapatkan JWT.
+
+### Dashboard Admin
+- **GET `/api/admin/dashboard`**  
+  Mendapatkan data ringkasan dashboard (khusus admin).
+
+### Manajemen Buku
+- **GET `/api/books`**  
+  Mendapatkan daftar semua buku.
+- **GET `/api/books/:id`**  
+  Mendapatkan detail buku berdasarkan ID.
+- **POST `/api/books`**  
+  Menambah buku baru.
+- **PUT `/api/books/:id`**  
+  Mengubah data buku.
+- **DELETE `/api/books/:id`**  
+  Menghapus buku.
+
+### Manajemen Anggota
+- **GET `/api/members`**  
+  Mendapatkan daftar anggota.
+- **GET `/api/members/:id`**  
+  Mendapatkan detail anggota.
+- **POST `/api/members`**  
+  Menambah anggota baru.
+- **PUT `/api/members/:id`**  
+  Mengubah data anggota.
+- **DELETE `/api/members/:id`**  
+  Menghapus anggota.
+
+### Manajemen Peminjaman
+- **GET `/api/borrowings`**  
+  Mendapatkan daftar peminjaman.
+- **GET `/api/borrowings/:id`**  
+  Mendapatkan detail peminjaman.
+- **POST `/api/borrowings`**  
+  Membuat peminjaman baru.
+- **PUT `/api/borrowings/:id`**  
+  Update status peminjaman (misal: pengembalian).
+- **DELETE `/api/borrowings/:id`**  
+  Menghapus data peminjaman.
+
+### Manajemen Kategori Buku
+- **GET `/api/book-categories`**  
+  Mendapatkan daftar kategori buku.
+- **POST `/api/book-categories`**  
+  Menambah kategori buku.
+- **PUT `/api/book-categories/:id`**  
+  Mengubah kategori buku.
+- **DELETE `/api/book-categories/:id`**  
+  Menghapus kategori buku.
+
+---
+
+> **Seluruh endpoint di atas hanya dapat diakses oleh user dengan role `admin` atau `petugas` yang telah login dan memiliki token JWT yang valid.**
 
 ## Catatan
 

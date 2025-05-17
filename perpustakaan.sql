@@ -26,6 +26,9 @@ CREATE TABLE books (
   publication_year INT,
   stock INT NOT NULL DEFAULT 1,
   cover_image VARCHAR(255),
+  description TEXT AFTER author,
+  cover_url VARCHAR(255) AFTER stock,
+  is_active BOOLEAN DEFAULT TRUE AFTER cover_url,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -59,26 +62,20 @@ CREATE TABLE borrowings (
 );
 
 -- Tabel Kategori Buku
-CREATE TABLE book_categories (
+CREATE TABLE IF NOT EXISTS book_categories (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(50) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Tabel Relasi Buku-Kategori
-CREATE TABLE book_category_mappings (
+CREATE TABLE IF NOT EXISTS book_category_mappings (
   book_id INT NOT NULL,
   category_id INT NOT NULL,
   PRIMARY KEY (book_id, category_id),
   FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
   FOREIGN KEY (category_id) REFERENCES book_categories(id) ON DELETE CASCADE
 );
-
-
-
-
-
 
 -- Tambahkan user contoh (password: admin123):
 INSERT INTO users (name, email, password, role) 
@@ -105,3 +102,7 @@ INSERT INTO borrowings (book_id, member_id, borrow_date, due_date, status) VALUE
 (1, 11, '2023-05-01', '2023-05-15', 'dipinjam'),
 (2, 11, '2023-05-10', '2023-05-24', 'dikembalikan'),
 (1, 12, '2023-05-12', '2023-05-26', 'dipinjam');
+
+-- Contoh data kategori
+INSERT INTO book_categories (name) VALUES 
+('Fiksi'), ('Non-Fiksi'), ('Sains'), ('Sejarah'), ('Teknologi');
