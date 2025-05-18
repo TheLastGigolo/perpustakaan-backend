@@ -4,7 +4,8 @@ const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-const bookRoutes = require('./routes/bookRoutes'); // Tambahkan ini
+const bookRoutes = require('./routes/bookRoutes');
+const memberRoutes = require('./routes/memberRoutes'); // Tambahkan ini
 
 const app = express();
 
@@ -12,11 +13,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static('uploads')); // Untuk akses file upload
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/admin/books', bookRoutes); // Tambahkan ini
+app.use('/api/admin/books', bookRoutes);
+app.use('/api/admin/members', memberRoutes); // Tambahkan ini
 
 // Health check
 app.get('/', (req, res) => {

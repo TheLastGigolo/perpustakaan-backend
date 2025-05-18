@@ -158,11 +158,87 @@ npm start
 
 > **Seluruh endpoint di atas hanya dapat diakses oleh user dengan role `admin` atau `petugas` yang telah login dan memiliki token JWT yang valid.**
 
-## Catatan
+## Dokumentasi API Manajemen Anggota (Khusus Halaman Admin)
 
-- Password user di-hash menggunakan bcryptjs.
-- Token JWT wajib dikirim pada header `Authorization` untuk endpoint yang diproteksi.
-- Role user (`admin`, `petugas`, `anggota`) membatasi akses fitur tertentu.
+> **Seluruh endpoint di bawah ini hanya dapat diakses oleh user dengan role `admin` atau `petugas` yang telah login dan memiliki token JWT yang valid.**
+
+### 1. Mendapatkan Daftar Anggota
+- **Endpoint:** `GET /admin/members`
+- **Query Parameters:**
+  - `search` : Pencarian berdasarkan nama, kode anggota, atau NIM
+  - `status` : Filter berdasarkan status (`aktif`, `tidak aktif`, `pending`)
+  - `faculty` : Filter berdasarkan fakultas
+  - `study_program` : Filter berdasarkan program studi
+  - `page` : Halaman (default: 1)
+  - `limit` : Jumlah item per halaman (default: 10)
+- **Contoh:**
+  ```
+  GET /admin/members?search=andi&status=aktif&faculty=Teknik&page=1&limit=10
+  ```
+
+### 2. Mendapatkan Opsi Filter
+- **Endpoint:** `GET /admin/members/filters`
+- **Deskripsi:** Mendapatkan daftar nilai unik untuk filter (fakultas, program studi, status).
+
+### 3. Menambahkan Anggota Baru
+- **Endpoint:** `POST /admin/members`
+- **Body (form-data):**
+  - `name` : Nama lengkap (wajib)
+  - `email` : Email (wajib)
+  - `password` : Password (wajib)
+  - `member_code` : Kode anggota (wajib)
+  - `nim` : NIM
+  - `faculty` : Fakultas
+  - `study_program` : Program studi
+  - `phone` : Nomor telepon
+  - `address` : Alamat
+  - `join_date` : Tanggal bergabung (YYYY-MM-DD)
+  - `status` : Status (`aktif`, `tidak aktif`, `pending`)
+  - `profile_picture` : File gambar profil (opsional)
+- **Contoh:**  
+  Kirim data sebagai `form-data` pada Postman atau frontend.
+
+### 4. Mengupdate Anggota
+- **Endpoint:** `PUT /admin/members/:id`
+- **Body (form-data):**
+  - Field sama seperti create, semua optional
+  - `profile_picture` : File gambar profil (jika ingin update)
+- **Catatan:**  
+  Jika mengunggah gambar baru, gambar lama akan dihapus otomatis.
+
+### 5. Menghapus Anggota
+- **Endpoint:** `DELETE /admin/members/:id`
+- **Deskripsi:**  
+  Menghapus data anggota beserta file gambar profil jika ada.
+
+---
+
+### Fitur yang Tersedia
+
+#### Manajemen Data Anggota
+- CRUD lengkap untuk data anggota
+- Upload dan update foto profil anggota
+- Status anggota: aktif, tidak aktif, pending
+
+#### Data Mahasiswa
+- NIM (Nomor Induk Mahasiswa)
+- Fakultas
+- Program Studi
+
+#### Pencarian dan Filter
+- Pencarian multi-kolom (nama, kode anggota, NIM)
+- Filter berdasarkan status, fakultas, dan program studi
+- Pagination (halaman & limit)
+
+#### Upload Gambar
+- Penyimpanan gambar di folder `uploads`
+- Penghapusan otomatis gambar lama saat update/delete
+- Akses gambar profil via URL
+
+---
+
+> **Catatan:**  
+> Semua endpoint ini hanya untuk kebutuhan dashboard/admin. Tidak tersedia untuk akses anggota umum.
 
 ---
 
