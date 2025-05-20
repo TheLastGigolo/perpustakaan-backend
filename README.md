@@ -75,40 +75,6 @@ Endpoint login digunakan untuk melakukan autentikasi user dan mendapatkan token 
 
 ---
 
-## Struktur Direktori
-
-```
-perpustakaan-backend
-├── .gitignore                # File untuk mengecualikan file/folder tertentu dari git
-├── .eslintrc.json            # Konfigurasi ESLint untuk code style
-├── .env                      # Konfigurasi environment (database, secret, dll)
-├── package.json              # Konfigurasi npm dan daftar dependencies
-├── package-lock.json         # Lock file npm
-├── perpustakaan.sql          # Script SQL untuk membuat database & tabel awal
-├── README.md                 # Dokumentasi proyek
-└── src                       # Folder source code utama
-    ├── app.js                # Entry point aplikasi Express
-    ├── config                # Konfigurasi aplikasi
-    │   ├── database.js       # Koneksi ke database MySQL
-    │   └── jwt.js            # Konfigurasi JWT
-    ├── controllers           # Logic untuk menangani request
-    │   ├── adminController.js    # [BARU] Controller untuk fitur admin
-    │   └── authController.js     # Controller untuk autentikasi/login
-    ├── middlewares           # Middleware Express (misal: auth)
-    │   └── authMiddleware.js     # Middleware untuk proteksi route
-    ├── models                # Model untuk akses data/database
-    │   └── userModel.js          # Model user (query ke tabel user)
-    ├── perpustakaan.sql          # Script SQL (duplikat, bisa dihapus jika sudah di root)
-    ├── routes                # Routing endpoint API
-    │   ├── adminRoutes.js        # [BARU] Route untuk fitur admin
-    │   └── authRoutes.js         # Route untuk autentikasi/login
-    └── utils                 # Utility/helper functions
-        ├── ahpCalculator.js      # [BARU] Helper untuk perhitungan AHP
-        └── response.js           # Helper untuk format response API
-```
-
----
-
 ## Fitur Baru: Dashboard Admin
 
 ### Kegunaan
@@ -166,6 +132,157 @@ Fitur dashboard admin digunakan untuk menampilkan ringkasan data penting di sist
 - **Dashboard Admin**: Menyediakan data statistik utama untuk admin, sehingga memudahkan monitoring aktivitas perpustakaan.
 - **Rekomendasi Buku Populer**: Menggunakan metode AHP untuk menentukan buku yang paling direkomendasikan berdasarkan frekuensi peminjaman, ketersediaan stok, dan kebaruan buku.
 - **Keamanan**: Hanya admin yang dapat mengakses endpoint ini, menggunakan middleware autentikasi JWT.
+
+---
+
+## Fitur Baru: Pencarian & Manajemen Buku
+
+### Kegunaan
+Fitur ini menambahkan kemampuan pencarian buku dengan **FULLTEXT search** (otomatis membuat index jika belum ada), filter buku berdasarkan berbagai kriteria, serta endpoint CRUD (Create, Read, Update, Delete) buku untuk admin.  
+Selain itu, endpoint publik juga tersedia untuk pencarian dan detail buku tanpa login.
+
+### Endpoint Utama
+
+#### 1. **Pencarian Buku (Publik)**
+- **Endpoint:** `GET /api/books`
+- **Query:**  
+  - `search` (opsional): kata kunci pencarian  
+  - `author`, `publication_year`, `category`, `is_active` (opsional): filter  
+  - `page`, `limit` (opsional): paginasi
+- **Contoh:**  
+  `/api/books?search=algoritma&page=1&limit=10`
+- **Response:**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "books": [
+        {
+          "id": 1,
+          "title": "Algoritma Pemrograman",
+          "author": "Budi Santoso",
+          "description": "...",
+          "isbn": "...",
+          "publisher": "...",
+          "publication_year": 2022,
+          "stock": 3,
+          "cover_url": "...",
+          "is_active": true,
+          "categories": ["Teknik", "Pemrograman"]
+        }
+        // ...
+      ],
+      "pagination": {
+        "total": 20,
+        "total_pages": 2,
+        "current_page": 1,
+        "per_page": 10
+      }
+    }
+  }
+  ```
+
+#### 2. **Pencarian Buku dengan FULLTEXT**
+- **Endpoint:** `GET /api/books/search?q=kata_kunci`
+- **Kegunaan:**  
+  Pencarian lebih relevan dan cepat menggunakan FULLTEXT index pada judul, penulis, dan deskripsi buku.
+
+#### 3. **Manajemen Buku (Admin)**
+- **Endpoint:**  
+  - `POST /api/admin/books` (tambah buku)
+  - `PUT /api/admin/books/:id` (update buku)
+  - `DELETE /api/admin/books/:id` (hapus buku)
+  - `GET /api/admin/books/:id` (detail buku)
+- **Akses:** Hanya admin (wajib login & JWT)
+- **Header:**  
+  `Authorization: Bearer <token_admin>`
+
+#### 4. **Dashboard Admin**
+- **Endpoint:** `GET /api/admin/dashboard`
+- **Kegunaan:** Menampilkan statistik utama (total buku, anggota, peminjaman, antrian, dan rekomendasi buku populer dengan AHP).
+- **Akses:** Hanya admin (wajib login & JWT)
+- **Response:**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "total_books": 120,
+      "total_members": 45,
+      "borrowed_books": 18,
+      "queued_borrows": 3,
+      "popular_books": [
+        {
+          "id": 1,
+          "title": "Algoritma Pemrograman",
+          "author": "Budi Santoso",
+          "score": "0.85",
+          "borrow_count": 25,
+          "stock": 3
+        }
+        // ...maksimal 5 buku teratas
+      ]
+    }
+  }
+  ```
+
+---
+
+### Penjelasan Fitur
+
+- **Pencarian Buku FULLTEXT:**  
+  Memungkinkan pencarian cepat dan relevan pada judul, penulis, dan deskripsi buku. Index FULLTEXT akan otomatis dibuat saat aplikasi dijalankan jika belum ada.
+- **Filter & Pagination:**  
+  Mendukung filter berdasarkan penulis, tahun terbit, kategori, status aktif, serta paginasi hasil.
+- **Manajemen Buku (CRUD):**  
+  Admin dapat menambah, mengubah, dan menghapus data buku melalui endpoint khusus.
+- **Dashboard Admin:**  
+  Menyediakan data statistik utama dan rekomendasi buku populer berbasis AHP (Analytical Hierarchy Process).
+- **Keamanan:**  
+  Endpoint admin hanya dapat diakses oleh user dengan role admin menggunakan JWT.
+
+---
+
+## Struktur Direktori
+
+```
+perpustakaan-backend
+├── .gitignore
+├── .eslintrc.json
+├── .env
+├── package.json
+├── package-lock.json
+├── perpustakaan.sql
+├── README.md
+└── src
+    ├── app.js
+    ├── config
+    │   ├── checkFulltext.js         # [BARU] Cek & buat FULLTEXT index otomatis
+    │   ├── database.js
+    │   └── jwt.js
+    ├── controllers
+    │   ├── adminController.js
+    │   ├── authController.js
+    │   └── bookController.js        # [BARU] Controller untuk buku
+    ├── middlewares
+    │   ├── authMiddleware.js
+    │   └── bookModel.js             # [BARU] Model buku (bisa dipindah ke /models)
+    ├── models
+    │   └── userModel.js
+    ├── routes
+    │   ├── adminRoutes.js
+    │   ├── authRoutes.js
+    │   ├── bookRoutes.js            # [BARU] Route untuk buku (admin)
+    │   └── publicBookRoutes.js      # [BARU] Route untuk buku (publik)
+    └── utils
+        ├── ahpCalculator.js
+        └── response.js
+```
+
+**Keterangan [BARU]:**
+- `checkFulltext.js`: Membuat FULLTEXT index otomatis jika belum ada.
+- `bookController.js`, `bookRoutes.js`, `publicBookRoutes.js`, `bookModel.js`: Mendukung fitur pencarian, filter, dan CRUD buku.
+
+---
 
 
 
