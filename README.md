@@ -158,15 +158,120 @@ npm start
 
 > **Seluruh endpoint di atas hanya dapat diakses oleh user dengan role `admin` atau `petugas` yang telah login dan memiliki token JWT yang valid.**
 
-## Catatan
+## Peningkatan Fitur Pencarian Perpustakaan
 
-- Password user di-hash menggunakan bcryptjs.
-- Token JWT wajib dikirim pada header `Authorization` untuk endpoint yang diproteksi.
-- Role user (`admin`, `petugas`, `anggota`) membatasi akses fitur tertentu.
+Fitur pencarian pada aplikasi perpustakaan telah ditingkatkan dengan beberapa perubahan utama:
+
+### 1. Peningkatan Implementasi Pencarian
+- Menambahkan pencarian FULLTEXT dengan mode Boolean (menggunakan operator `+` dan `*` untuk pencocokan yang lebih baik)
+- Fallback ke pencarian LIKE jika FULLTEXT tidak mengembalikan hasil
+- Pencarian di lebih banyak kolom (judul, penulis, deskripsi, ISBN, penerbit)
+- Pengurutan hasil berdasarkan skor relevansi
+
+### 2. Pemeriksaan Indeks FULLTEXT
+- Otomatis memeriksa dan membuat indeks FULLTEXT saat aplikasi dijalankan
+- Tidak membuat ulang indeks jika sudah ada
+
+### 3. Penanganan Error yang Lebih Baik
+- Pesan error lebih deskriptif
+- Validasi parameter pencarian
+
+### 4. Opsi Filter Tambahan
+- Endpoint opsi filter di rute publik dan admin
+- Pengguna dapat melihat filter yang tersedia seperti penulis, kategori, dan tahun publikasi
+
+### Cara Penggunaan Fitur Pencarian
+
+#### Untuk Admin:
+1. **Mencari Buku di Panel Admin**  
+   Gunakan kolom pencarian di halaman daftar buku admin.  
+   Contoh API:  
+   ```
+   GET /api/admin/books?search=teknologi&author=Tere%20Liye&publication_year=2023
+   ```
+2. **Menggunakan Filter Lanjutan**  
+   Kombinasikan pencarian kata kunci dengan filter penulis, tahun, atau kategori.
+3. **Paginasi Hasil**  
+   Gunakan parameter `page` dan `limit` untuk mengatur jumlah hasil.
+   ```
+   GET /api/admin/books/search?q=pemrograman&page=1&limit=20
+   ```
+4. **Mendapatkan Opsi Filter**  
+   ```
+   GET /api/admin/books/filters
+   ```
+
+#### Untuk Pengguna Biasa:
+1. **Mencari Buku di Katalog Publik**  
+   ```
+   GET /api/books/search?q=laskar
+   ```
+2. **Menggunakan Filter**  
+   ```
+   GET /api/books?search=novel&category=Fiksi
+   ```
+3. **Paginasi Hasil**  
+   ```
+   GET /api/books/search?q=sejarah&page=2&limit=10
+   ```
+4. **Mendapatkan Opsi Filter**  
+   ```
+   GET /api/books/filters
+   ```
+
+### Contoh Implementasi Frontend
+
+#### Untuk Admin:
+```javascript
+// Contoh fungsi pencarian untuk admin
+async function searchBooksAdmin(keyword, filters = {}, page = 1) {
+  let url = `/api/admin/books?page=${page}`;
+  if (keyword) url += `&search=${encodeURIComponent(keyword)}`;
+  if (filters.author) url += `&author=${encodeURIComponent(filters.author)}`;
+  if (filters.publication_year) url += `&publication_year=${encodeURIComponent(filters.publication_year)}`;
+  if (filters.category) url += `&category=${encodeURIComponent(filters.category)}`;
+  const response = await fetch(url);
+  return await response.json();
+}
+
+// Mendapatkan opsi filter
+async function getFilterOptions() {
+  const response = await fetch('/api/admin/books/filters');
+  return await response.json();
+}
+```
+
+#### Untuk Pengguna Biasa:
+```javascript
+// Contoh fungsi pencarian untuk pengguna biasa
+async function searchBooks(keyword, page = 1) {
+  const url = `/api/books/search?q=${encodeURIComponent(keyword)}&page=${page}`;
+  const response = await fetch(url);
+  return await response.json();
+}
+
+// Pencarian dengan filter
+async function searchBooksWithFilters(keyword, filters = {}, page = 1) {
+  let url = `/api/books?page=${page}`;
+  if (keyword) url += `&search=${encodeURIComponent(keyword)}`;
+  if (filters.author) url += `&author=${encodeURIComponent(filters.author)}`;
+  if (filters.publication_year) url += `&publication_year=${encodeURIComponent(filters.publication_year)}`;
+  if (filters.category) url += `&category=${encodeURIComponent(filters.category)}`;
+  const response = await fetch(url);
+  return await response.json();
+}
+
+// Mendapatkan opsi filter
+async function getFilterOptions() {
+  const response = await fetch('/api/books/filters');
+  return await response.json();
+}
+```
+
+Dengan perbaikan ini, fitur pencarian di aplikasi perpustakaan Anda akan lebih efisien dan relevan.
 
 ---
 
 Dibuat untuk kebutuhan dashboard admin perpustakaan.
-
 
 Dibuat dengan ❤️ untuk proyek perpustakaan | [@pembuat](https://github.com/TheLastGigolo)

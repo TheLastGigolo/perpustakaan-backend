@@ -4,17 +4,23 @@ const db = require('../config/database');
 class Book {
   static async getAllBooks({ search = '', filter = {}, page = 1, limit = 10 }) {
     const offset = (page - 1) * limit;
-    let query = 'SELECT b.*, GROUP_CONCAT(DISTINCT bc.name) as categories FROM books b ';
-    query += 'LEFT JOIN book_category_mappings bcm ON b.id = bcm.book_id ';
-    query += 'LEFT JOIN book_categories bc ON bcm.category_id = bc.id ';
+    let query = `
+      SELECT 
+        b.id, b.title, b.author, b.description, b.isbn, b.publisher, 
+        b.publication_year, b.stock, b.cover_url, b.is_active,
+        GROUP_CONCAT(DISTINCT bc.name) as categories 
+      FROM books b 
+      LEFT JOIN book_category_mappings bcm ON b.id = bcm.book_id 
+      LEFT JOIN book_categories bc ON bcm.category_id = bc.id 
+    `;
     
     const whereClauses = [];
     const params = [];
     
     // Search
     if (search) {
-      whereClauses.push('(b.title LIKE ? OR b.author LIKE ? OR b.isbn LIKE ?)');
-      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      whereClauses.push('(b.title LIKE ? OR b.author LIKE ? OR b.isbn LIKE ? OR b.description LIKE ?)');
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
     }
     
     // Filters
@@ -51,9 +57,12 @@ class Book {
     const [books] = await db.query(query, params);
     
     // Count total books for pagination
-    let countQuery = 'SELECT COUNT(DISTINCT b.id) as total FROM books b ';
-    countQuery += 'LEFT JOIN book_category_mappings bcm ON b.id = bcm.book_id ';
-    countQuery += 'LEFT JOIN book_categories bc ON bcm.category_id = bc.id ';
+    let countQuery = `
+      SELECT COUNT(DISTINCT b.id) as total 
+      FROM books b 
+      LEFT JOIN book_category_mappings bcm ON b.id = bcm.book_id 
+      LEFT JOIN book_categories bc ON bcm.category_id = bc.id 
+    `;
     
     if (whereClauses.length > 0) {
       countQuery += ' WHERE ' + whereClauses.join(' AND ');
@@ -67,7 +76,10 @@ class Book {
   
   static async getBookById(id) {
     const [rows] = await db.query(
-      `SELECT b.*, GROUP_CONCAT(DISTINCT bc.name) as categories 
+      `SELECT 
+        b.id, b.title, b.author, b.description, b.isbn, b.publisher,
+        b.publication_year, b.stock, b.cover_url, b.is_active,
+        GROUP_CONCAT(DISTINCT bc.name) as categories 
        FROM books b 
        LEFT JOIN book_category_mappings bcm ON b.id = bcm.book_id 
        LEFT JOIN book_categories bc ON bcm.category_id = bc.id 
@@ -79,10 +91,15 @@ class Book {
   }
   
   static async createBook(bookData) {
-    const { title, author, isbn, publisher, publication_year, stock, description, cover_url, categories } = bookData;
+    const { 
+      title, author, isbn, publisher, publication_year, 
+      stock, description, cover_url, categories 
+    } = bookData;
     
     const [result] = await db.query(
-      'INSERT INTO books (title, author, isbn, publisher, publication_year, stock, description, cover_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      `INSERT INTO books 
+        (title, author, isbn, publisher, publication_year, stock, description, cover_url) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [title, author, isbn, publisher, publication_year, stock, description, cover_url]
     );
     
@@ -97,7 +114,10 @@ class Book {
   }
   
   static async updateBook(id, bookData) {
-    const { title, author, isbn, publisher, publication_year, stock, description, cover_url, categories, is_active } = bookData;
+    const { 
+      title, author, isbn, publisher, publication_year, 
+      stock, description, cover_url, categories, is_active 
+    } = bookData;
     
     await db.query(
       `UPDATE books SET 
@@ -140,8 +160,10 @@ class Book {
     const categoryIds = rows.map(row => row.id);
     
     // Then insert mappings
-    const values = categoryIds.map(categoryId => [bookId, categoryId]);
-    await db.query('INSERT INTO book_category_mappings (book_id, category_id) VALUES ?', [values]);
+    if (categoryIds.length > 0) {
+      const values = categoryIds.map(categoryId => [bookId, categoryId]);
+      await db.query('INSERT INTO book_category_mappings (book_id, category_id) VALUES ?', [values]);
+    }
   }
   
   static async getAuthors() {
@@ -157,6 +179,118 @@ class Book {
   static async getCategories() {
     const [rows] = await db.query('SELECT name FROM book_categories ORDER BY name');
     return rows.map(row => row.name);
+  }
+  
+  static async searchBooks({ searchQuery, page = 1, limit = 10 }) {
+    try {
+      const offset = (page - 1) * limit;
+      
+      // Prepare search terms for fulltext search
+      // Add * to each term for partial matching
+      const searchTerms = searchQuery
+        .split(' ')
+        .filter(term => term.trim() !== '')
+        .map(term => `+${term}*`)
+        .join(' ');
+      
+      // First try FULLTEXT search
+      let query = `
+        SELECT 
+          b.id, b.title, b.author, b.description, b.isbn, b.publisher,
+          b.publication_year, b.stock, b.cover_url, b.is_active,
+          GROUP_CONCAT(DISTINCT bc.name) as categories,
+          MATCH(b.title, b.author, b.description) AGAINST(? IN BOOLEAN MODE) AS relevance
+        FROM books b 
+        LEFT JOIN book_category_mappings bcm ON b.id = bcm.book_id 
+        LEFT JOIN book_categories bc ON bcm.category_id = bc.id 
+        WHERE MATCH(b.title, b.author, b.description) AGAINST(? IN BOOLEAN MODE)
+           OR b.isbn LIKE ?
+        GROUP BY b.id 
+        ORDER BY relevance DESC
+        LIMIT ? OFFSET ?
+      `;
+      
+      let countQuery = `
+        SELECT COUNT(DISTINCT b.id) as total 
+        FROM books b 
+        WHERE MATCH(b.title, b.author, b.description) AGAINST(? IN BOOLEAN MODE)
+           OR b.isbn LIKE ?
+      `;
+      
+      const searchParams = [searchTerms, searchTerms, `%${searchQuery}%`, limit, offset];
+      const countParams = [searchTerms, `%${searchQuery}%`];
+      
+      // Execute FULLTEXT search
+      const [books] = await db.query(query, searchParams);
+      const [totalResult] = await db.query(countQuery, countParams);
+      
+      // If no results with FULLTEXT, fall back to LIKE search for broader matches
+      if (books.length === 0) {
+        const likeQuery = `
+          SELECT 
+            b.id, b.title, b.author, b.description, b.isbn, b.publisher,
+            b.publication_year, b.stock, b.cover_url, b.is_active,
+            GROUP_CONCAT(DISTINCT bc.name) as categories
+          FROM books b 
+          LEFT JOIN book_category_mappings bcm ON b.id = bcm.book_id 
+          LEFT JOIN book_categories bc ON bcm.category_id = bc.id 
+          WHERE b.title LIKE ? 
+             OR b.author LIKE ? 
+             OR b.description LIKE ?
+             OR b.isbn LIKE ?
+             OR b.publisher LIKE ?
+          GROUP BY b.id 
+          LIMIT ? OFFSET ?
+        `;
+        
+        const likeCountQuery = `
+          SELECT COUNT(DISTINCT b.id) as total 
+          FROM books b 
+          WHERE b.title LIKE ? 
+             OR b.author LIKE ? 
+             OR b.description LIKE ?
+             OR b.isbn LIKE ?
+             OR b.publisher LIKE ?
+        `;
+        
+        const likeParam = `%${searchQuery}%`;
+        const likeParams = [likeParam, likeParam, likeParam, likeParam, likeParam, limit, offset];
+        const likeCountParams = [likeParam, likeParam, likeParam, likeParam, likeParam];
+        
+        const [likeBooks] = await db.query(likeQuery, likeParams);
+        const [likeTotalResult] = await db.query(likeCountQuery, likeCountParams);
+        
+        return {
+          books: likeBooks,
+          total: likeTotalResult[0].total
+        };
+      }
+      
+      return {
+        books,
+        total: totalResult[0].total
+      };
+    } catch (error) {
+      console.error('Error in searchBooks:', error);
+      throw error;
+    }
+  }
+  
+  static async getFilterOptions() {
+    try {
+      const authors = await this.getAuthors();
+      const publicationYears = await this.getPublicationYears();
+      const categories = await this.getCategories();
+      
+      return {
+        authors,
+        publication_years: publicationYears,
+        categories
+      };
+    } catch (error) {
+      console.error('Error getting filter options:', error);
+      throw error;
+    }
   }
 }
 
