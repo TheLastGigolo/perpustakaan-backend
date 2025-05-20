@@ -12,6 +12,12 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
+// Di file app.js
+const adminRoutes = require('./routes/adminRoutes');
+
+// Setelah deklarasi authRoutes
+app.use('/api/admin', adminRoutes);
+
 
 // Health check
 app.get('/', (req, res) => {
