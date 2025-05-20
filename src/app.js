@@ -1,11 +1,11 @@
+// Update app.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const bookRoutes = require('./routes/bookRoutes');
-const publicBookRoutes = require('./routes/publicBookRoutes');
-const { checkAndCreateFulltextIndex } = require('./config/checkFulltext');
+const memberRoutes = require('./routes/memberRoutes'); // Tambahkan ini
 
 const app = express();
 
@@ -13,42 +13,34 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/covers', express.static('uploads/covers'));
-
-// Check for FULLTEXT index at startup
-(async () => {
-  try {
-    await checkAndCreateFulltextIndex();
-    console.log('FULLTEXT index check completed');
-  } catch (error) {
-    console.error('Error during FULLTEXT index check:', error);
-  }
-})();
+app.use('/covers', express.static('public/covers'));
+app.use('/uploads', express.static('uploads')); // Untuk akses file upload
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/books', bookRoutes);
-app.use('/api/books', publicBookRoutes);
+app.use('/api/admin/members', memberRoutes); // Tambahkan ini
 
 // Health check
 app.get('/', (req, res) => {
-  res.send('Library API is running');
+  res.send('API Perpustakaan Berjalan');
 });
 
 // Error handling
 app.use((req, res, next) => {
-  res.status(404).json({ status: 'error', message: 'Endpoint not found' });
+  res.status(404).json({ status: 'error', message: 'Endpoint tidak ditemukan' });
 });
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ status: 'error', message: 'Server error' });
+  res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server' });
 });
 
+// Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server berjalan di port ${PORT}`);
 });
 
 module.exports = app;
