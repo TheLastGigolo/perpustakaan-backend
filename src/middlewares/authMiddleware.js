@@ -18,4 +18,27 @@ const authenticate = (req, res, next) => {
   }
 };
 
-module.exports = { authenticate };
+// Tambahkan fungsi authorize baru
+const authorize = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return errorResponse(res, 401, 'User tidak terautentikasi');
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      return errorResponse(
+        res, 
+        403, 
+        `Akses ditolak. Role ${req.user.role} tidak diizinkan untuk akses ini.`
+      );
+    }
+
+    next();
+  };
+};
+
+// Export kedua fungsi
+module.exports = { 
+  authenticate,
+  authorize
+};
