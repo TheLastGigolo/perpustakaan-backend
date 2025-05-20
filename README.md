@@ -242,6 +242,67 @@ Selain itu, endpoint publik juga tersedia untuk pencarian dan detail buku tanpa 
 
 ---
 
+## Fitur Baru: Manajemen Anggota
+
+### Kegunaan
+Fitur ini memungkinkan admin atau petugas untuk mengelola data anggota perpustakaan, termasuk menambah, mengubah, menghapus, serta melihat daftar anggota. Fitur ini juga mendukung upload foto profil anggota.
+
+### Endpoint Utama
+
+#### 1. **Daftar Anggota (Admin/Petugas)**
+- **Endpoint:** `POST /api/admin/members`
+- **Akses:** Hanya admin/petugas (wajib login & JWT)
+- **Header:**  
+  `Authorization: Bearer <token_admin>`
+- **Body:** `multipart/form-data`  
+  - Field data anggota (name, email, password, member_code, nim, dst)
+  - Field file: `profile_picture` (opsional, tipe file gambar)
+- **Contoh di Postman:**  
+  Pilih `Body > form-data`, masukkan field sesuai kebutuhan, dan upload file pada `profile_picture`.
+
+#### 2. **Update Anggota**
+- **Endpoint:** `PUT /api/admin/members/:id`
+- **Akses:** Admin/petugas
+- **Body:** `multipart/form-data` (bisa update data & foto profil)
+
+#### 3. **Hapus Anggota**
+- **Endpoint:** `DELETE /api/admin/members/:id`
+- **Akses:** Admin/petugas
+
+#### 4. **Daftar & Filter Anggota**
+- **Endpoint:** `GET /api/admin/members`
+- **Query:**  
+  - `search` (opsional): cari nama, kode anggota, atau NIM  
+  - `status`, `faculty`, `study_program` (opsional): filter  
+  - `page`, `limit` (opsional): paginasi
+
+#### 5. **Detail Anggota**
+- **Endpoint:** `GET /api/admin/members/:id`
+
+#### 6. **Opsi Filter**
+- **Endpoint:** `GET /api/admin/members/filters`
+- **Fungsi:** Mendapatkan daftar status, fakultas, dan program studi unik untuk filter di frontend.
+
+---
+
+### Contoh Penggunaan Upload Foto Profil Anggota
+
+- **Body di Postman:**  
+  - Pilih `form-data`
+  - Tambahkan field:  
+    - `name`, `email`, `password`, `member_code`, `nim`, dst (text)
+    - `profile_picture` (type: File, upload gambar)
+
+---
+
+## Catatan
+
+- Endpoint anggota hanya bisa diakses oleh admin/petugas (role di JWT).
+- File foto profil anggota akan disimpan di folder `/uploads/members/` dan dapat diakses via URL `/uploads/members/nama-file.jpg`.
+- Endpoint publik buku (`/api/books`, `/api/books/search`, `/api/books/:id`) dapat diakses tanpa login.
+
+---
+
 ## Struktur Direktori
 
 ```
@@ -262,17 +323,20 @@ perpustakaan-backend
     ├── controllers
     │   ├── adminController.js
     │   ├── authController.js
-    │   └── bookController.js        # [BARU] Controller untuk buku
+    │   ├── bookController.js        # [BARU] Controller untuk buku
+    │   └── memberController.js      # [BARU] Controller untuk anggota
     ├── middlewares
     │   ├── authMiddleware.js
     │   └── bookModel.js             # [BARU] Model buku (bisa dipindah ke /models)
     ├── models
-    │   └── userModel.js
+    │   ├── userModel.js
+    │   └── memberModel.js           # [BARU] Model anggota
     ├── routes
     │   ├── adminRoutes.js
     │   ├── authRoutes.js
     │   ├── bookRoutes.js            # [BARU] Route untuk buku (admin)
-    │   └── publicBookRoutes.js      # [BARU] Route untuk buku (publik)
+    │   ├── publicBookRoutes.js      # [BARU] Route untuk buku (publik)
+    │   └── memberRoutes.js          # [BARU] Route untuk anggota (admin)
     └── utils
         ├── ahpCalculator.js
         └── response.js
@@ -281,6 +345,63 @@ perpustakaan-backend
 **Keterangan [BARU]:**
 - `checkFulltext.js`: Membuat FULLTEXT index otomatis jika belum ada.
 - `bookController.js`, `bookRoutes.js`, `publicBookRoutes.js`, `bookModel.js`: Mendukung fitur pencarian, filter, dan CRUD buku.
+- `memberController.js`, `memberModel.js`, `memberRoutes.js`: Mendukung fitur CRUD anggota, filter, dan upload foto profil anggota.
+
+---
+
+## Cara Penggunaan Endpoint Anggota (Member)
+
+### 1. **Daftar Anggota (Admin/Petugas)**
+- **Endpoint:** `POST /api/admin/members`
+- **Akses:** Hanya admin/petugas (wajib login & JWT)
+- **Header:**  
+  `Authorization: Bearer <token_admin>`
+- **Body:** `multipart/form-data`  
+  - Field data anggota (name, email, password, member_code, nim, dst)
+  - Field file: `profile_picture` (opsional, tipe file gambar)
+- **Contoh di Postman:**  
+  Pilih `Body > form-data`, masukkan field sesuai kebutuhan, dan upload file pada `profile_picture`.
+
+### 2. **Update Anggota**
+- **Endpoint:** `PUT /api/admin/members/:id`
+- **Akses:** Admin/petugas
+- **Body:** `multipart/form-data` (bisa update data & foto profil)
+
+### 3. **Hapus Anggota**
+- **Endpoint:** `DELETE /api/admin/members/:id`
+- **Akses:** Admin/petugas
+
+### 4. **Daftar & Filter Anggota**
+- **Endpoint:** `GET /api/admin/members`
+- **Query:**  
+  - `search` (opsional): cari nama, kode anggota, atau NIM  
+  - `status`, `faculty`, `study_program` (opsional): filter  
+  - `page`, `limit` (opsional): paginasi
+
+### 5. **Detail Anggota**
+- **Endpoint:** `GET /api/admin/members/:id`
+
+### 6. **Opsi Filter**
+- **Endpoint:** `GET /api/admin/members/filters`
+- **Fungsi:** Mendapatkan daftar status, fakultas, dan program studi unik untuk filter di frontend.
+
+---
+
+## Contoh Penggunaan Upload Foto Profil Anggota
+
+- **Body di Postman:**  
+  - Pilih `form-data`
+  - Tambahkan field:  
+    - `name`, `email`, `password`, `member_code`, `nim`, dst (text)
+    - `profile_picture` (type: File, upload gambar)
+
+---
+
+## Catatan
+
+- Endpoint anggota hanya bisa diakses oleh admin/petugas (role di JWT).
+- File foto profil anggota akan disimpan di folder `/uploads/members/` dan dapat diakses via URL `/uploads/members/nama-file.jpg`.
+- Endpoint publik buku (`/api/books`, `/api/books/search`, `/api/books/:id`) dapat diakses tanpa login.
 
 ---
 
