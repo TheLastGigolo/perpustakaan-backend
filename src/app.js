@@ -1,11 +1,11 @@
-// Update app.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const bookRoutes = require('./routes/bookRoutes');
-const memberRoutes = require('./routes/memberRoutes'); // Tambahkan ini
+const memberRoutes = require('./routes/memberRoutes');
+const borrowingRoutes = require('./routes/borrowingRoutes'); // Tambahkan ini
 
 const app = express();
 
@@ -21,6 +21,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/books', bookRoutes);
 app.use('/api/admin/members', memberRoutes); // Tambahkan ini
+app.use('/api/borrowings', borrowingRoutes); // Tambahkan ini
 
 // Health check
 app.get('/', (req, res) => {
