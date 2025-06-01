@@ -5,7 +5,8 @@ const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const bookRoutes = require('./routes/bookRoutes');
 const memberRoutes = require('./routes/memberRoutes');
-const borrowingRoutes = require('./routes/borrowingRoutes'); // Tambahkan ini
+const borrowingRoutes = require('./routes/borrowingRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 
 const app = express();
 
@@ -16,12 +17,25 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/covers', express.static('public/covers'));
 app.use('/uploads', express.static('uploads')); // Untuk akses file upload
 
+// Add error handler for JSON parsing
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({
+      statusCode: 400,
+      status: 'Bad Request',
+      message: 'Format JSON tidak valid'
+    });
+  }
+  next();
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/books', bookRoutes);
 app.use('/api/admin/members', memberRoutes); // Tambahkan ini
-app.use('/api/borrowings', borrowingRoutes); // Tambahkan ini
+app.use('/api/admin/borrowings', borrowingRoutes); // Register the borrowing routes
+app.use('/api/reports', reportRoutes);
 
 // Health check
 app.get('/', (req, res) => {
